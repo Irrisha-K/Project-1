@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Line Chart with Date and Time Input</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        #chart{
+            height: 1000px;
+            width: 1200px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Line Chart with Date and Time Input</h1>
+
+    <!-- Form for adding new data -->
+    <form id="dataForm">
+        <label for="datetime">Select Date and Time:</label>
+        <input type="datetime-local" id="datetime" required>
+        <label for="entry-type">Entry Type: </label>
+        <select id="entry-type">
+            <option value="income">Income</option>
+            <option value="expense">Expense</option>
+        </select>
+        <label for="Amount">Amount</label>
+        <input type="number" id="entry-amount" required>
+        <button type="submit">Add Data</button>
+    </form>
+
+    <!-- Canvas for the chart -->
+    <canvas id="chart"></canvas>
+
+    <script>
+        // Helper function to get the month from a date string
+        function getMonthFromDate(dateString) {
+            const date = new Date(dateString);
+            return date.getMonth(); // Returns month as 0 (Jan) to 11 (Dec)
+        }
+
+        // Load stored data from local storage
+        function loadStoredData() {
+            const storedData = localStorage.getItem('budgetData');
+            if (storedData) {
+                return JSON.parse(storedData);
+            } else {
+                return {
+                    income: new Array(12).fill(0),
+                    expenses: new Array(12).fill(0)
+                };
+            }
+        }
+
+        // Initialize the chart with stored data
+        const storedData = loadStoredData();
+        const linectx = document.getElementById('linechart').getContext('2d');
+        const linechart = new Chart(linectx, {
+            type: 'line',
+            data: {
+                labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'], // Fixed labels
+                datasets: [
+                    {
+                        label: 'Income',
+                        data: storedData.income,
+                        borderColor: 'rgb(75, 192, 192)',
+                        tension: 0.1,
+                        fill: false
+                    },
+                    {
+                        label: 'Expenses',
+                        data: storedData.expenses,
+                        borderColor: 'rgb(255, 99, 132)',
+                        tension: 0.1,
+                        fill: false
+                    }
+                ]
+            },
+            options: {
+                responsive: false,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        display: true,
+                        title: {
+                            display: true,
+                            text: 'Months'
+                        }
+                    },
+                    y: {
+                        display: true,
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Values'
+                        }
+                    }
+                }
+            }
+        });
+
+        // 3. Handle form submission and update the chart
+        document.getElementById('dataForm').addEventListener('submit', function(event) {
+            event.preventDefault(); // Prevent form from reloading the page
+
+            // Get form values
+            const dateTime = document.getElementById('datetime').value;
+            const monthIndex = getMonthFromDate(dateTime); // Get the month index from the date
+            const type = document.getElementById('entry-type').value;
+            const amount = parseFloat(document.getElementById('entry-amount').value);
+
+            // Update the chart data for the selected month
+            if (type === 'income') {
+                chart.data.datasets[0].data[monthIndex] += amount;
+            } else {
+                chart.data.datasets[1].data[monthIndex] += amount;
+            }
+
+            // Save updated data to local storage
+            const updatedData = {
+                income: chart.data.datasets[0].data,
+                expenses: chart.data.datasets[1].data
+            };
+            localStorage.setItem('budgetData', JSON.stringify(updatedData));
+
+            // Update the chart to reflect the new data
+            chart.update();
+
+            // Clear the form inputs after submission
+            document.getElementById('datetime').value = '';
+            document.getElementById('entry-amount').value = '';
+            document.getElementById('entry-type').value = '';
+        });
+    </script>
+</body>
+</html>
